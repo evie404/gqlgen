@@ -273,8 +273,14 @@ func (m *Plugin) MutateConfig(cfg *config.Config) error {
 			}
 		}
 		goType := templates.CurrentImports.LookupType(field.Type)
+
+		modelName := templates.ToGo(model.Name)
+		if cfg.UsePointersForGetters {
+			modelName = "*" + modelName
+		}
+
 		if strings.HasPrefix(goType, "[]") {
-			getter := fmt.Sprintf("func (this %s) Get%s() %s {\n", templates.ToGo(model.Name), field.GoName, goType)
+			getter := fmt.Sprintf("func (this %s) Get%s() %s {\n", modelName, field.GoName, goType)
 			getter += fmt.Sprintf("\tif this.%s == nil { return nil }\n", field.GoName)
 			getter += fmt.Sprintf("\tinterfaceSlice := make(%s, 0, len(this.%s))\n", goType, field.GoName)
 			getter += fmt.Sprintf("\tfor _, concrete := range this.%s { interfaceSlice = append(interfaceSlice, ", field.GoName)
@@ -288,7 +294,7 @@ func (m *Plugin) MutateConfig(cfg *config.Config) error {
 			getter += "}"
 			return getter
 		}
-		getter := fmt.Sprintf("func (this %s) Get%s() %s { return ", templates.ToGo(model.Name), field.GoName, goType)
+		getter := fmt.Sprintf("func (this %s) Get%s() %s { return ", modelName, field.GoName, goType)
 
 		if interfaceFieldTypeIsPointer && !structFieldTypeIsPointer {
 			getter += "&"
